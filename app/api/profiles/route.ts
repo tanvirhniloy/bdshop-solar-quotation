@@ -1,0 +1,8 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
+
+async function adminClient(){
+ const supabase=await createClient(); const {data:{user}}=await supabase.auth.getUser(); if(!user)return {supabase,user:null,admin:false}; const {data:p}=await supabase.from('profiles').select('role').eq('id',user.id).single(); return {supabase,user,admin:p?.role==='ADMIN'};
+}
+export async function GET(){const {supabase,user,admin}=await adminClient();if(!user)return NextResponse.json({error:'Unauthorized'},{status:401});if(!admin)return NextResponse.json({error:'Admin permission required'},{status:403});const {data,error}=await supabase.from('profiles').select('*').order('created_at');if(error)return NextResponse.json({error:error.message},{status:500});return NextResponse.json({data});}
+export async function PATCH(request:NextRequest){const {supabase,user,admin}=await adminClient();if(!user)return NextResponse.json({error:'Unauthorized'},{status:401});if(!admin)return NextResponse.json({error:'Admin permission required'},{status:403});const body=await request.json();const {id,role,full_name}=body;if(!id)return NextResponse.json({error:'Missing profile id'},{status:400});if(id===user.id&&role==='STAFF')return NextResponse.json({error:'You cannot remove your own admin access.'},{status:400});const payload:any={};if(role)payload.role=role;if(full_name!==undefined)payload.full_name=String(full_name).slice(0,120);const {data,error}=await supabase.from('profiles').update(payload).eq('id',id).select().single();if(error)return NextResponse.json({error:error.message},{status:500});return NextResponse.json({data});}

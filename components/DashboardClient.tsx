@@ -1,0 +1,16 @@
+'use client';
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { FilePlus2, FileText, Clock3, Banknote, ArrowRight } from 'lucide-react';
+import { formatBDT, formatDate } from '@/lib/utils';
+
+interface Row { id:string; quotation_number:string; customer_name:string; quotation_date:string; grand_total:number; status:string; profiles?:{full_name:string;email:string}|null; }
+
+export default function DashboardClient(){
+ const [rows,setRows]=useState<Row[]>([]); const [stats,setStats]=useState({total:0,month:0,today:0,value:0,draft:0,generated:0}); const [loading,setLoading]=useState(true);
+ useEffect(()=>{(async()=>{const [r,st]=await Promise.all([fetch('/api/quotations?page=1&pageSize=8'),fetch('/api/dashboard')]);const j=await r.json();const sj=await st.json();if(r.ok)setRows(j.data||[]);if(st.ok)setStats(sj.data);setLoading(false);})();},[]);
+ const cards=[['Total Quotations',stats.total,FileText],['This Month',stats.month,Clock3],['Today',stats.today,FilePlus2],['Total Value',formatBDT(stats.value),Banknote],['Draft',stats.draft,FileText],['Generated',stats.generated,FileText]] as const;
+ return <div><div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-7"><div><h1 className="text-2xl font-bold">Dashboard</h1><p className="text-sm text-slate-500">Solar & IPS quotation operations at a glance.</p></div><Link href="/new" className="btn btn-primary"><FilePlus2 size={16}/> New Quotation</Link></div>
+ <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 mb-7">{cards.map(([label,value,Icon])=><div className="card stat" key={label}><div className="flex justify-between items-start"><div><div className="text-xs text-slate-500">{label}</div><div className="text-xl font-bold mt-1">{loading?'—':value}</div></div><Icon size={18} className="text-[#15458f]"/></div></div>)}</div>
+ <div className="card overflow-hidden"><div className="p-4 border-b flex justify-between items-center"><div><h2 className="font-bold">Recent Quotations</h2><p className="text-xs text-slate-500">Latest records visible to your role.</p></div><Link href="/quotations" className="text-sm text-[#15458f] font-bold flex items-center gap-1">View all <ArrowRight size={14}/></Link></div><div className="table-scroll"><table className="w-full text-sm"><thead className="bg-slate-50 text-slate-500"><tr><th className="text-left p-3">Quotation</th><th className="text-left p-3">Customer</th><th className="text-left p-3">Amount</th><th className="text-left p-3">Date</th><th className="text-left p-3">Created By</th><th className="text-left p-3">Status</th></tr></thead><tbody>{rows.map(r=><tr key={r.id} className="border-t"><td className="p-3 font-semibold"><Link className="text-[#15458f]" href={`/quotations/${r.id}`}>{r.quotation_number}</Link></td><td className="p-3">{r.customer_name}</td><td className="p-3">{formatBDT(Number(r.grand_total))}</td><td className="p-3">{formatDate(r.quotation_date)}</td><td className="p-3">{r.profiles?.full_name||r.profiles?.email||'—'}</td><td className="p-3"><span className="px-2 py-1 rounded-full bg-slate-100 text-xs">{r.status}</span></td></tr>)}{!loading&&!rows.length&&<tr><td colSpan={6} className="p-8 text-center text-slate-500">No quotations yet.</td></tr>}</tbody></table></div></div></div>;
+}
