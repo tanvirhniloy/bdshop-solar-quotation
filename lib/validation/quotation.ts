@@ -4,7 +4,7 @@ import { CATEGORIES } from '@/types/quotation';
 const itemSchema = z.object({
   category: z.string().min(1),
   item_name: z.string().trim().min(1, 'Item name is required').max(300),
-  description: z.string().max(1000).optional().default(''),
+  description: z.preprocess((value) => value ?? '', z.string().max(1000)),
   quantity: z.number().positive('Quantity must be greater than 0'),
   unit: z.string().trim().min(1).max(50).default('pcs'),
   unit_price: z.number().nonnegative('Unit price cannot be negative'),

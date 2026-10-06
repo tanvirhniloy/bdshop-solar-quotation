@@ -251,8 +251,8 @@ export default function QuotationPdf({
                 width: '100%',
               }}
             >
-              Reference / Project:{' '}
-              {quotation.customer_reference || '—'}
+              Prepared By:{' '}
+              {quotation.customer_reference||'—'}
             </Text>
           </View>
         </View>
